@@ -22,6 +22,41 @@ painel.Parent = screenGuiMain
 painel.Active = true
 painel.Draggable = true
 
+-- Adicionar borda RGB no painel
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Thickness = 3
+uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+uiStroke.Parent = painel
+
+-- Lista de cores RGB
+local cores = {
+    Color3.fromRGB(255, 0, 0),   -- Vermelho
+    Color3.fromRGB(0, 255, 0),   -- Verde
+    Color3.fromRGB(0, 0, 255),   -- Azul
+    Color3.fromRGB(255, 255, 0), -- Amarelo
+    Color3.fromRGB(255, 0, 255), -- Roxo
+    Color3.fromRGB(0, 255, 255)  -- Ciano
+}
+
+-- Loop para mudar as cores suavemente
+task.spawn(function()
+    local i = 1
+    while true do
+        local novaCor = cores[i]
+        game:GetService("TweenService"):Create(
+            uiStroke,
+            TweenInfo.new(1.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+            {Color = novaCor}
+        ):Play()
+        i = i + 1
+        if i > #cores then
+            i = 1
+        end
+        task.wait(2)
+    end
+end)
+
+-- Título
 local titulo = Instance.new("TextLabel")
 titulo.Size = UDim2.new(1, 0, 0, 30)
 titulo.BackgroundTransparency = 1
@@ -38,6 +73,7 @@ linha.BackgroundColor3 = Color3.fromRGB(0, 85, 255)
 linha.BorderSizePixel = 0
 linha.Parent = painel
 
+-- Botão fechar
 local botaoFechar = Instance.new("TextButton")
 botaoFechar.Size = UDim2.new(0, 25, 0, 25)
 botaoFechar.Position = UDim2.new(1, -30, 0, 2)
@@ -211,10 +247,50 @@ end
 local AutoFarm = criarMaterialToggleAnimado("😈Auto-Farm", 0.05, 0.3)
 local MultiRebirth = criarMaterialToggleAnimado("💺REB|STATUS", 0.05, 0.5)
 local RebStats = criarMaterialToggleAnimado("🎇Auto-Transform", 0.05, 0.7)
-local AutoRebirth = criarMaterialToggleAnimado("🥇atack 1", 0.55, 0.3)
-local AutoCharge = criarMaterialToggleAnimado("☠️tp planeta", 0.55, 0.5)
-local FarmTeleportToggle = criarMaterialToggleAnimado("💫multicast", 0.55, 0.7)
-local TextoBtn = criarMaterialToggleAnimado("📜anti kick", 0.3, 0.9)
+local AutoCharge = criarMaterialToggleAnimado("🥇atack 1", 0.55, 0.3)
+local FarmTeleportToggle = criarMaterialToggleAnimado("☠️tp planeta", 0.55, 0.5)
+local Multicast = criarMaterialToggleAnimado("💫multicast", 0.55, 0.7)
+local AntiKick = criarMaterialToggleAnimado("📜anti kick", 8.7, 0.8)
+local AutoKill = criarMaterialToggleAnimado("💀Auto-KILL", 0.05, 0.9) -- posição do auto kill
+
+-- Auto KILL logica
+local autoKillLigado = false
+AutoKill.MouseButton1Click:Connect(function()
+    autoKillLigado = not autoKillLigado
+end)
+
+local function pegarPlayerAleatorio()
+    local players = {}
+    for _, pl in pairs(Players:GetPlayers()) do
+        if pl ~= LocalPlayer and pl.Character and pl.Character:FindFirstChild("Humanoid") and pl.Character.Humanoid.Health > 0 then
+            table.insert(players, pl)
+        end
+    end
+    if #players > 0 then
+        return players[math.random(1, #players)]
+    else
+        return nil
+    end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if autoKillLigado then
+            local target = pegarPlayerAleatorio()
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    repeat
+                        hrp.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+                        game:GetService("ReplicatedStorage").Package.Events.p:FireServer("Blacknwhite27", 1)
+                        task.wait(0.1)
+                    until not target or not target.Character or target.Character:FindFirstChild("Humanoid") == nil or target.Character.Humanoid.Health <= 0 or not autoKillLigado
+                end
+            end
+        end
+    end
+end)
 
 -- Garantir que o painel reapareça após a morte
 LocalPlayer.CharacterAdded:Connect(function()
